@@ -1,5 +1,42 @@
 # Changelog
 
+## 1.21.0 — 2026-10-24
+
+Codex sub-agents no longer show up as a second, unresumable session, a thread
+Codex Desktop still holds fails once with a reason instead of five times,
+`unsnooze update` works on Windows, and the dashboard can stay out of the way.
+
+### Codex
+
+- A Codex session that spawns multi-agent sub-agents was tracked twice per
+  limit stop: once for the conversation, and once for the sub-agent's own
+  rollout, which Codex refuses to resume. That second record burned five
+  attempts and sent a "gave up" notification on every stop. A sub-agent's stop
+  is now recorded under its parent thread, so one stop is one record (#50).
+- A headless revive of a thread that Codex Desktop still has open fails with
+  "already has an active writer" no matter how often it is retried. unsnooze
+  now stops after the first attempt and tells you to continue the thread in
+  Codex Desktop, or close it there so unsnooze can take over (#49).
+- "Selected model is at capacity" is retried as an overload, like a stream
+  error, instead of leaving the session sitting at the prompt (#46).
+
+### Dashboard
+
+- `unsnooze config set autoDashboard off` (or `UNSNOOZE_AUTO_DASHBOARD=off`)
+  keeps `status`, `usage` and `sessions` in their plain terminal view on a
+  TTY. `unsnooze dashboard` still opens the full dashboard (#54).
+- The daemon and watchers no longer load React and Ink unless the dashboard
+  actually opens, roughly halving their memory use.
+
+### Install and update
+
+- A shell rc file that is a symlink into a dotfiles repository stays a symlink:
+  install, update and uninstall edit the file it points to, and the backups
+  sit next to that file. This also fixes `EPERM` on a link with macOS `uchg`
+  set (#51, #53).
+- `unsnooze update` and `unsnooze doctor` failed on Windows with
+  `spawnSync npm ENOENT`. They now run npm in a way Windows accepts (#49).
+
 ## 1.20.1 — 2026-10-08
 
 `unsnooze help` lists the usage flags in the right place again, and the docs'
