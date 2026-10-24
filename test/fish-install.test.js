@@ -6,7 +6,7 @@
 
 import { test, after, mock } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { mkdtempSync, rmSync, readFileSync, writeFileSync, existsSync, symlinkSync, lstatSync, mkdirSync } from 'node:fs';
 import os, { tmpdir } from 'node:os';
 import { syncBuiltinESMExports } from 'node:module';
 import { join } from 'node:path';
@@ -25,7 +25,7 @@ for (const [name, path] of Object.entries({
 })) process.env[name] = join(PROFILE, path);
 
 const {
-  cmdInstall, cmdUninstall, installFishBlock, fishWrapperBlock, stripFencedBlock,
+  cmdInstall, cmdUninstall, installFishBlock, fishWrapperBlock, installZshrcBlock, stripFencedBlock,
 } = await import('../src/install.js');
 import { fishConfigPath } from '../src/fish.js';
 
@@ -191,6 +191,48 @@ installTest('cmdUninstall removes the fish block and nothing else', () => {
     assert.ok(!after.includes('# >>> unsnooze >>>'));
     assert.ok(!after.includes('function claude'));
     assert.match(after, /# keep me/, 'user content is preserved');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+installTest('cmdInstall keeps a symlinked shell rc and stores backups beside its target', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'unsnooze-symlink-install-'));
+  try {
+    const realRc = join(dir, 'dotfiles', 'zshrc');
+    const linkedRc = join(dir, '.zshrc');
+    const settings = join(dir, 'settings.json');
+    mkdirSync(join(dir, 'dotfiles'), { recursive: true });
+    writeFileSync(realRc, '# user config\n');
+    symlinkSync(realRc, linkedRc);
+
+    const code = cmdInstall(['--yes', '--settings', settings, '--zshrc', linkedRc], { agents: ['claude'] });
+
+    assert.equal(code, 0);
+    assert.ok(lstatSync(linkedRc).isSymbolicLink(), 'install must preserve the dotfiles symlink');
+    assert.match(readFileSync(realRc, 'utf-8'), /# >>> unsnooze >>>/);
+    assert.equal(readFileSync(`${realRc}.unsnooze-orig`, 'utf-8'), '# user config\n');
+    assert.equal(readFileSync(`${realRc}.unsnooze-bak`, 'utf-8'), '# user config\n');
+    assert.equal(existsSync(`${linkedRc}.unsnooze-bak`), false, 'backup should sit beside the resolved target');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+installTest('cmdUninstall edits a symlinked shell rc file without replacing the symlink', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'unsnooze-symlink-uninstall-'));
+  try {
+    const realRc = join(dir, 'dotfiles', 'zshrc');
+    const linkedRc = join(dir, '.zshrc');
+    mkdirSync(join(dir, 'dotfiles'), { recursive: true });
+    writeFileSync(realRc, `# user config\n${installZshrcBlock('', ['claude']).content}`);
+    symlinkSync(realRc, linkedRc);
+
+    const code = cmdUninstall(['--zshrc', linkedRc, '--settings', join(dir, 'settings.json')]);
+
+    assert.equal(code, 0);
+    assert.ok(lstatSync(linkedRc).isSymbolicLink(), 'the dotfiles symlink must survive uninstall');
+    assert.equal(readFileSync(realRc, 'utf-8'), '# user config\n\n');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

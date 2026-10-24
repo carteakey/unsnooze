@@ -11,7 +11,7 @@
 // --settings <path> / --zshrc <path> / --fishrc <path> override targets (used
 // by tests).
 
-import { readFileSync, writeFileSync, renameSync, existsSync, copyFileSync, rmSync, mkdirSync, unlinkSync } from 'node:fs';
+import { readFileSync, writeFileSync, renameSync, existsSync, copyFileSync, rmSync, mkdirSync, unlinkSync, lstatSync, realpathSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { homedir, userInfo } from 'node:os';
 import { join, dirname, basename, delimiter } from 'node:path';
@@ -52,20 +52,37 @@ function parseArgs(rest) {
   return opts;
 }
 
+function resolveWriteTarget(path) {
+  let target = path;
+  try {
+    if (lstatSync(path).isSymbolicLink()) target = realpathSync(path);
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+  }
+  return target;
+}
+
 function atomicWrite(path, content) {
-  mkdirSync(dirname(path), { recursive: true });   // e.g. ~/.claude may not exist yet
-  const tmp = join(dirname(path), `.${Date.now()}.tmp`);
+  // Shell rc files are sometimes symlinks into a dotfiles repository. Rename
+  // over the link would replace it (and fails when the link has macOS uchg),
+  // so atomically replace the real file while leaving the link itself intact.
+  const target = resolveWriteTarget(path);
+  mkdirSync(dirname(target), { recursive: true });   // e.g. ~/.claude may not exist yet
+  const tmp = join(dirname(target), `.${Date.now()}.tmp`);
   writeFileSync(tmp, content);
-  renameSync(tmp, path);
+  renameSync(tmp, target);
 }
 
 // Two backup tiers: `.unsnooze-orig` is the pristine pre-unsnooze snapshot,
 // written exactly once (a re-run must never overwrite it with an already-
 // modified file); `.unsnooze-bak` rolls forward on every run.
 function backupOnce(path) {
-  const orig = `${path}.unsnooze-orig`;
-  if (!existsSync(orig)) copyFileSync(path, orig);
-  copyFileSync(path, `${path}.unsnooze-bak`);
+  const target = resolveWriteTarget(path);
+  const orig = `${target}.unsnooze-orig`;
+  const backup = `${target}.unsnooze-bak`;
+  if (!existsSync(orig)) copyFileSync(target, orig);
+  copyFileSync(target, backup);
+  return backup;
 }
 
 // --- settings.json hook management ---
@@ -675,10 +692,10 @@ export function cmdInstall(rest, { agents = enabledAgents() } = {}) {
   //    when installed below).
   if (agents.includes('claude')) {
     if (existsSync(opts.settings)) {
-      backupOnce(opts.settings);
+      const backup = backupOnce(opts.settings);
       const before = readFileSync(opts.settings, 'utf-8');
       atomicWrite(opts.settings, mergeHookIntoSettings(before));
-      console.log(`unsnooze: StopFailure hook installed in ${opts.settings} (backup: ${opts.settings}.unsnooze-bak)`);
+      console.log(`unsnooze: StopFailure hook installed in ${opts.settings} (backup: ${backup})`);
     } else {
       atomicWrite(opts.settings, mergeHookIntoSettings('{}'));
       console.log(`unsnooze: created ${opts.settings} with StopFailure hook`);
