@@ -62,6 +62,10 @@ unsnooze usage                # burn rate and time-to-limit, before you hit the 
 unsnooze doctor [--fix]       # install health check
 ```
 
+Prefer a text view? Run `unsnooze config set autoDashboard off` to make
+`status`, `usage`, and `sessions` print their terminal view without opening the
+full-screen dashboard. `unsnooze dashboard` still opens it explicitly.
+
 Needs Node ≥ 20.12 on macOS, Linux or Windows. tmux ≥ 3.2, Zellij, herdr ≥ 0.8
 or cmux give pane-level watching; without one, unsnooze runs headless and still
 catches and resumes stops. Every command: [command reference](https://unsnooze.dev/docs/commands/).

@@ -16,7 +16,7 @@ import { queueList } from './prompt-queue.js';
 import {
   shouldUseTui, formatStatusTui, formatSessionsTui, formatPreviewTui, logoBlock,
 } from './tui.js';
-import { shouldUseDashboard, runDashboard } from './dashboard/run.js';
+import { shouldUseDashboard } from './dashboard/gate.js';
 
 function fmtCountdown(ms) {
   if (ms <= 0) return 'due now';
@@ -109,7 +109,10 @@ export async function cmdStatus(args = []) {
     return 0;
   }
   // Interactive TTY → live dashboard (until q). Pipes stay plain.
-  if (shouldUseDashboard()) return runDashboard({ tab: 'status' });
+  if (shouldUseDashboard()) {
+    const { runDashboard } = await import('./dashboard/run.js');
+    return runDashboard({ tab: 'status' });
+  }
 
   const state = readState();
   const sessions = Object.values(state.sessions);
@@ -411,7 +414,10 @@ export async function cmdPreview(rest = [], {
 
 // `unsnooze sessions` — list unsnooze-owned mux sessions with panes + records.
 export async function cmdSessions() {
-  if (shouldUseDashboard()) return runDashboard({ tab: 'sessions' });
+  if (shouldUseDashboard()) {
+    const { runDashboard } = await import('./dashboard/run.js');
+    return runDashboard({ tab: 'sessions' });
+  }
   const owned = await listOwnedSessions();
   if (shouldUseTui()) {
     console.log(formatSessionsTui(owned, { color: true }));

@@ -21,6 +21,17 @@ test('defaults apply when no config file exists', () => {
   assert.equal(typeof getConfig('resumeMessage'), 'string');
   assert.equal(getConfig('usageWarn'), 'notify');
   assert.equal(getConfig('usageWarnAt'), '80,95');
+  assert.equal(getConfig('autoDashboard'), true);
+});
+
+test('autoDashboard can be disabled through config or environment', () => {
+  setConfigValue('autoDashboard', 'off');
+  assert.equal(getConfig('autoDashboard'), false);
+  process.env.UNSNOOZE_AUTO_DASHBOARD = 'on';
+  assert.equal(getConfig('autoDashboard'), true);
+  delete process.env.UNSNOOZE_AUTO_DASHBOARD;
+  assert.throws(() => setConfigValue('autoDashboard', 'maybe'), /boolean/i);
+  setConfigValue('autoDashboard', 'on');
 });
 
 test('usageWarn enum + env override', () => {

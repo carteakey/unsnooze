@@ -19,10 +19,7 @@ const h = React.createElement;
 
 // -- small local helpers ---------------------------------------------------
 
-// Duplicated from cli.js's shortenHome rather than imported: cli.js pulls in
-// this dashboard module transitively (cli.js -> dashboard/run.js -> App.js),
-// so importing it back here would be a real import cycle, not just a scary
-// one. Five lines is cheaper than untangling that.
+// Keep this local so the dashboard does not import the full CLI command graph.
 function shortenCwd(p) {
   if (typeof p !== 'string' || !p) return p;
   const home = homedir();

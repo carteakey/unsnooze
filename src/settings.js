@@ -34,6 +34,7 @@ export const DEFAULTS = {
   // Pre-wall usage warnings (1.13): daemon notifies at % bands + ETA tiers.
   usageWarn: 'notify',     // off | notify
   usageWarnAt: '80,95',    // % thresholds (comma-separated); garbage → default
+  autoDashboard: true,    // status/usage/sessions open dashboard on a TTY
   mouse: true,             // dashboard mouse support (click tabs/rows, wheel scroll)
   // Opt-in: auto-close `resumed` panes idle longer than reapIdleAfter (ms).
   // Off by default — an idle revived TUI is indistinguishable from one the
@@ -84,6 +85,7 @@ const ENV_NAMES = {
   contextGuardTokens: 'UNSNOOZE_CONTEXT_GUARD_TOKENS',
   usageWarn: 'UNSNOOZE_USAGE_WARN',
   usageWarnAt: 'UNSNOOZE_USAGE_WARN_AT',
+  autoDashboard: 'UNSNOOZE_AUTO_DASHBOARD',
   mouse: 'UNSNOOZE_MOUSE',
   reapResumed: 'UNSNOOZE_REAP_RESUMED',
   reapIdleAfter: 'UNSNOOZE_REAP_IDLE_AFTER',

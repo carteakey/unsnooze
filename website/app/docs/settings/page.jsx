@@ -49,6 +49,7 @@ export default function SettingsDocsPage() {
                   <tbody>
                     <tr><td><C>multiplexer</C></td><td><C>auto</C></td><td><C>auto</C>, <C>tmux</C>, <C>zellij</C>, <C>herdr</C>, <C>cmux</C>, or <C>headless</C>. Auto prefers the multiplexer you're inside, then the only installed backend, tmux as tie-breaker — and <C>headless</C> only when none is installed, never ahead of a real pane.</td></tr>
                     <tr><td><C>autoResume</C></td><td><C>true</C></td><td>Master switch. Off = stops are still tracked, but nothing resumes until <C>resume-now</C> or turning it back on.</td></tr>
+                    <tr><td><C>autoDashboard</C></td><td><C>true</C></td><td>Open the live dashboard automatically for <C>status</C>, <C>usage</C>, and <C>sessions</C> on a TTY. Off uses the terminal view; <C>unsnooze dashboard</C> still works.</td></tr>
                     <tr><td><C>menuAutoAnswer</C></td><td><C>true</C></td><td>May unsnooze answer Claude's limit menu (send keys in your pane)? Off = watch-only.</td></tr>
                     <tr><td><C>notifications</C></td><td><C>true</C></td><td>Master switch for all notifications. Off silences every channel.</td></tr>
                     <tr><td><C>notifyChannel</C></td><td><C>auto</C></td><td><C>auto</C>, <C>native</C>, <C>osc</C>, or <C>bell</C> — see <a href="#notifications">Notifications</a>.</td></tr>

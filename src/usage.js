@@ -17,7 +17,7 @@ import { readState, updateState } from './state.js';
 import { getConfig } from './settings.js';
 import { ROLLOUT_RE, rolloutId } from './agents/codex.js';
 import { shouldUseTui, formatUsageTui, bar as tuiBar } from './tui.js';
-import { shouldUseDashboard, runDashboard } from './dashboard/run.js';
+import { shouldUseDashboard } from './dashboard/gate.js';
 
 // ---------------------------------------------------------------------------
 // Constants & pure math
@@ -1441,7 +1441,10 @@ export async function cmdUsage(args = []) {
 
   const asJson = args.includes('--json');
   // Interactive TTY (human path) → live dashboard Usage tab
-  if (!asJson && shouldUseDashboard()) return runDashboard({ tab: 'usage' });
+  if (!asJson && shouldUseDashboard()) {
+    const { runDashboard } = await import('./dashboard/run.js');
+    return runDashboard({ tab: 'usage' });
+  }
   try {
     const now = Date.now();
     const state = readState();

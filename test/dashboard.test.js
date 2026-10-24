@@ -61,6 +61,17 @@ test('shouldUseDashboard: TTY yes, pipe/json/CI no', () => {
   assert.equal(shouldUseDashboard({ isTTY: true, env: { CI: 'true' } }), false);
 });
 
+test('autoDashboard off keeps explicit dashboard available on a TTY', () => {
+  process.env.UNSNOOZE_AUTO_DASHBOARD = 'off';
+  try {
+    assert.equal(shouldUseDashboard({ isTTY: true, env: {} }), false);
+    assert.equal(shouldUseDashboard({ isTTY: true, env: {}, automatic: false }), true);
+    assert.equal(shouldUseDashboard({ isTTY: false, env: {}, automatic: false }), false);
+  } finally {
+    delete process.env.UNSNOOZE_AUTO_DASHBOARD;
+  }
+});
+
 test('loadStatusSnapshot returns shape', () => {
   const s = loadStatusSnapshot();
   assert.ok(Array.isArray(s.sessions));
