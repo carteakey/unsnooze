@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.21.1 — 2026-10-26
+
+A herdr session that is still open is now resumed in its own pane instead of a
+new tab.
+
+### herdr
+
+- When a stopped session has no pane on record (it was detected from its
+  transcript), or its recorded pane is gone, unsnooze now finds the herdr pane
+  already holding that conversation by its session id and resumes there,
+  instead of opening a new tab that duplicated the conversation. If herdr
+  reports the agent there as working, unsnooze waits (#47, #48).
+- unsnooze never guesses. If two panes claim the session, or the pane holding
+  it isn't safe to type into, the stop is marked failed with the reason and
+  one notification. If another unsnooze owns the pane, or herdr can't be
+  read, it counts as a failed attempt, so the stop still ends normally.
+
 ## 1.21.0 — 2026-10-24
 
 Codex sub-agents no longer show up as a second, unresumable session, a thread
