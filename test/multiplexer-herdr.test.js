@@ -970,3 +970,33 @@ test('an undeliverable argument fails before dispatch, not after', () => {
   assert.equal(spawner.calls.some(call => call.args.includes('run')), false,
     'nothing was typed into a pane');
 });
+
+test('findSessionPanes matches by agent session id across sessions, never by cwd', async () => {
+  const pane = (id, value, extra = {}) => ({
+    pane_id: id, cwd: '/repo', agent_status: 'idle',
+    agent_session: { agent: 'claude', kind: 'id', source: 'herdr:claude', value }, ...extra,
+  });
+  const spawner = fakeSpawner((_file, args) => {
+    const line = args.join(' ');
+    if (line.includes('session list')) {
+      return JSON.stringify({ result: { sessions: [{ name: 'default', running: true }, { name: 'dead', running: false }] } });
+    }
+    if (line.includes('--session default pane list')) {
+      return JSON.stringify({ result: { panes: [
+        pane('w1:p1', 'AAA', { tokens: { unsnooze_owner: 'lease-1' } }),
+        pane('w1:p2', 'BBB'),
+        { pane_id: 'w1:p3', cwd: '/repo', agent_status: 'unknown' },
+      ] } });
+    }
+    throw new Error(`unexpected ${line}`);
+  });
+  const found = await createHerdr({ spawner, env: {} }).findSessionPanes('AAA', { agent: 'claude' });
+  assert.deepEqual(found, [{ pane: 'w1:p1', paneOwner: 'default', status: 'idle', stamp: 'lease-1' }]);
+  assert.deepEqual(await createHerdr({ spawner, env: {} }).findSessionPanes('AAA', { agent: 'codex' }), []);
+  assert.ok(!spawner.calls.some(c => c.args.join(' ').includes('--session dead')));
+});
+
+test('findSessionPanes throws when sessions cannot be listed, rather than reporting none', async () => {
+  const spawner = fakeSpawner(() => { throw new Error('socket closed'); });
+  await assert.rejects(createHerdr({ spawner, env: {} }).findSessionPanes('AAA'), /socket closed/);
+});
